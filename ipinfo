@@ -1,0 +1,63 @@
+#!/bin/bash
+# checking if ip command is avaiable
+
+# check ip config
+checkcon=$(ip -4 r)
+if [[ -z $checkcon ]]
+then
+    echo "It seems you are not connected to any network."
+    echo "Check your connection or network interface status."
+    exit
+fi
+#checking if jq and curl avaiable
+
+# checking if nmcli is avaiable
+
+#  get Interface infos
+interface=$(ip -4 r | grep default | head -1 | cut -d' ' -f5)
+isdhcp=$(ip -4 r | grep default | head -1 | cut -d' ' -f7)
+macaddress=$(ip link show | grep -A 1  $interface | grep link/ether | head -1 | cut -d' ' -f6)
+if [[ -z $macaddress ]]
+then
+    macaddress="Not available, using a Vpn ?"
+fi
+# get wifi info
+
+# get IP infos
+iplocal=$(ip -4 a show $interface | grep inet | head -1 | cut -d' ' -f6)
+broadcast=$(ip -4 a show $interface | grep inet | head -1 | cut -d' ' -f8)
+gateway=$(ip -4 r | grep default | head -1 |cut -d' ' -f3)
+dnsserver=$(grep "nameserver" /etc/resolv.conf | head -1 | cut -d' ' -f2)
+#dnsserver=$(dig localhost | grep SERVER | cut -d' ' -f3 | cut -d'#' -f1)
+# get IP public info
+ippublic=$(curl -s ipinfo.io/ip)
+json_result=$(curl -s https://ipinfo.io/$ippublic/json)
+city=$(echo $json_result |  jq -r  '.city')
+region=$(echo $json_result |  jq -r '.region')
+country=$(echo $json_result |  jq -r '.country')
+zipcod=$(echo $json_result |  jq -r '.postal')
+timezone=$(echo $json_result |  jq -r '.timezone')
+# display infos
+echo "------------------------------------------"
+echo "       Active Interface"
+echo "------------------------------------------"
+echo "Interface   :  $interface"
+echo "Mac Address :  $macaddress "
+echo "Mode        :  $isdhcp"
+echo "------------------------------------------"
+echo "          IP infos"
+echo "------------------------------------------"
+echo "Local IP    :  $iplocal"
+echo "Broadcast   :  $broadcast"
+echo "Gateway     :  $gateway"
+echo "Public IP   :  $ippublic"
+echo "DNS Server  :  $dnsserver"
+echo "-----------------------------------------"
+echo "  Public IP Geolocalization"
+echo "-----------------------------------------"
+echo "City        :  $city"
+echo "Region      :  $region"
+echo "Country     :  $country"
+echo "Zip Code    :  $zipcod"
+echo "Timezone    :  $timezone"
+
