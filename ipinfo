@@ -16,22 +16,21 @@
 #---------------------------------------
 # checking if ip command is avaiable
 #---------------------------------------
-type ip >/dev/null 2>&1 || { echo >&2 "ipinfo require ip command but it's not installed.  Aborting."; exit 1; }
+type ip >/dev/null 2>&1 || { echo -e >&2 "ipinfo require ip command but it's not installed.  Aborting."; exit 1; }
 # check ip config
 if [[ -z $(ip -4 r) ]]
 then
-    echo "It seems you are not connected to any network."
-    echo "Check your connection or network interface status."
+    echo -e "\e[93m It seems you are not connected to any network."
+    echo -e "\e[93m Check your connection or network interface status."
     exit
 fi
 #checking if jq and curl avaiable
 geo=1
-type curl >/dev/null 2>&1 || { echo >&2 "ipinfo require curl to display public ip geolocalization."; geo=0; }
-type jq >/dev/null 2>&1 || { echo >&2 "ipinfo require jq to display public ip geolocalization."; geo=0; }
+type curl >/dev/null 2>&1 || { echo -e >&2 " \e[93m ipinfo require curl to display public ip geolocalization."; geo=0; }
+type jq >/dev/null 2>&1 || { echo -e >&2 "\e[93m ipinfo require jq to display public ip geolocalization."; geo=0; }
 # checking if nmcli is avaiable
-wifi=1
-type nmcli >/dev/null 2>&1 || { echo >&2 "ipinfo require nmcli to display wifi information."; wifi=0;}
-if [[ $(nmcli radio  wifi) != 'enabled' ]] 
+type nmcli >/dev/null 2>&1 || { echo -e >&2 "i\e[93m pinfo require nmcli to display wifi information."; wifi=0;}
+if [[ $(nmcli -t  -f name  connection show --active) == '' ]] 
 then
     wifi=0
 else
@@ -42,6 +41,7 @@ else
     rate=$(nmcli -t dev wifi list bssid $bssid | head -2 | cut -d':' -f11)
     signal=$(nmcli -t dev wifi list bssid $bssid | head -2 | cut -d':' -f12)
     type=$(nmcli -t dev wifi list bssid $bssid | head -2 | cut -d':' -f14)
+    wifi=1
 fi
 #  get Interface infos
 interface=$(ip -4 r | grep default | head -1 | cut -d' ' -f5)
@@ -59,7 +59,7 @@ dnsserver=$(grep "nameserver" /etc/resolv.conf | head -1 | cut -d' ' -f2)
 #dnsserver=$(dig localhost | grep SERVER | cut -d' ' -f3 | cut -d'#' -f1)
 
 # display infos
-echo "------------------------------------------"
+echo -e "\e[39m------------------------------------------"
 echo "            Active Interface"
 echo "------------------------------------------"
 echo "Interface   :  $interface"
