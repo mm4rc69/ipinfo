@@ -1,18 +1,34 @@
 #!/bin/bash
+#---------------------------------------
 # checking if ip command is avaiable
-
+#---------------------------------------
+type ip >/dev/null 2>&1 || { echo >&2 "ipinfo require ip command but it's not installed.  Aborting."; exit 1; }
 # check ip config
-checkcon=$(ip -4 r)
-if [[ -z $checkcon ]]
+if [[ -z $(ip -4 r) ]]
 then
     echo "It seems you are not connected to any network."
     echo "Check your connection or network interface status."
     exit
 fi
 #checking if jq and curl avaiable
-
+geo=0
+type curl >/dev/null 2>&1 || { echo >&2 "ipinfo require curl to display public ip geolocalization."; geo=1; }
+type jq >/dev/null 2>&1 || { echo >&2 "ipinfo require jq to display public ip geolocalization."; geo=1; }
 # checking if nmcli is avaiable
-
+wifi=1
+type nmcli >/dev/null 2>&1 || { echo >&2 "ipinfo require nmcli to display wifi information."; wifi=0;}
+if [[ $(nmcli radio  wifi) != 'enabled' ]] 
+then
+    wifi=0
+else
+    ssid=$(nmcli -t  -f all  connection show --active | grep wireless | cut -d':' -f1)
+    bssid=$(nmcli -t -f in-use,bssid dev wifi list | grep '*'  | cut -d':' -f 2,3,4,5,6,7 | sed 's/[\]//g' )
+    security=$(nmcli connection show  id $ssid | grep security.key-mgmt  |cut -d':' -f2 | sed -e 's/^[ \t]*//')
+    channel=$(nmcli -t dev wifi list bssid $bssid | head -2 | cut -d':' -f10)
+    rate=$(nmcli -t dev wifi list bssid $bssid | head -2 | cut -d':' -f11)
+    signal=$(nmcli -t dev wifi list bssid $bssid | head -2 | cut -d':' -f12)
+    type=$(nmcli -t dev wifi list bssid $bssid | head -2 | cut -d':' -f14)
+fi
 #  get Interface infos
 interface=$(ip -4 r | grep default | head -1 | cut -d' ' -f5)
 isdhcp=$(ip -4 r | grep default | head -1 | cut -d' ' -f7)
@@ -21,43 +37,59 @@ if [[ -z $macaddress ]]
 then
     macaddress="Not available, using a Vpn ?"
 fi
-# get wifi info
-
 # get IP infos
 iplocal=$(ip -4 a show $interface | grep inet | head -1 | cut -d' ' -f6)
 broadcast=$(ip -4 a show $interface | grep inet | head -1 | cut -d' ' -f8)
 gateway=$(ip -4 r | grep default | head -1 |cut -d' ' -f3)
 dnsserver=$(grep "nameserver" /etc/resolv.conf | head -1 | cut -d' ' -f2)
 #dnsserver=$(dig localhost | grep SERVER | cut -d' ' -f3 | cut -d'#' -f1)
-# get IP public info
-ippublic=$(curl -s ipinfo.io/ip)
-json_result=$(curl -s https://ipinfo.io/$ippublic/json)
-city=$(echo $json_result |  jq -r  '.city')
-region=$(echo $json_result |  jq -r '.region')
-country=$(echo $json_result |  jq -r '.country')
-zipcod=$(echo $json_result |  jq -r '.postal')
-timezone=$(echo $json_result |  jq -r '.timezone')
+
 # display infos
 echo "------------------------------------------"
-echo "       Active Interface"
+echo "            Active Interface"
 echo "------------------------------------------"
 echo "Interface   :  $interface"
 echo "Mac Address :  $macaddress "
 echo "Mode        :  $isdhcp"
 echo "------------------------------------------"
-echo "          IP infos"
+echo "               IP infos"
 echo "------------------------------------------"
 echo "Local IP    :  $iplocal"
 echo "Broadcast   :  $broadcast"
 echo "Gateway     :  $gateway"
-echo "Public IP   :  $ippublic"
 echo "DNS Server  :  $dnsserver"
-echo "-----------------------------------------"
-echo "  Public IP Geolocalization"
-echo "-----------------------------------------"
-echo "City        :  $city"
-echo "Region      :  $region"
-echo "Country     :  $country"
-echo "Zip Code    :  $zipcod"
-echo "Timezone    :  $timezone"
-
+if [ $wifi -eq 1 ]
+then
+    echo "-----------------------------------------"
+    echo "         Wifi information"
+    echo "-----------------------------------------"
+    echo "SSID     : $ssid"
+    echo "TYPE     : $type"
+    echo "BSSID    : $bssid"
+    echo "SECURITY : $security"
+    echo "CHANNEL  : $channel"
+    echo "RATE     : $rate"
+    echo "SIGNAL   : $signal"
+fi
+if [ $geo -eq 0 ]
+then
+    # get IP public info
+    ippublic=$(curl -s ipinfo.io/ip)
+    json_result=$(curl -s https://ipinfo.io/$ippublic/json)
+    city=$(echo $json_result |  jq -r  '.city')
+    region=$(echo $json_result |  jq -r '.region')
+    country=$(echo $json_result |  jq -r '.country')
+    zipcod=$(echo $json_result |  jq -r '.postal')
+    timezone=$(echo $json_result |  jq -r '.timezone')
+    echo "-----------------------------------------"
+    echo "     Public IP Geolocalization"
+    echo "-----------------------------------------"
+    echo "Public IP   :  $ippublic"
+    echo "City        :  $city"
+    echo "Region      :  $region"
+    echo "Country     :  $country"
+    echo "Zip Code    :  $zipcod"
+    echo "Timezone    :  $timezone"
+    echo "-----------------------------------------"
+    echo
+fi
