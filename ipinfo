@@ -1,4 +1,18 @@
 #!/bin/bash
+# Written by Marc MICHEL <marc _dot_  michel _at_ mailfence _dot_ com>
+# This script is hereby put in the public domain.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
+# EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 #---------------------------------------
 # checking if ip command is avaiable
 #---------------------------------------
@@ -11,9 +25,9 @@ then
     exit
 fi
 #checking if jq and curl avaiable
-geo=0
-type curl >/dev/null 2>&1 || { echo >&2 "ipinfo require curl to display public ip geolocalization."; geo=1; }
-type jq >/dev/null 2>&1 || { echo >&2 "ipinfo require jq to display public ip geolocalization."; geo=1; }
+geo=1
+type curl >/dev/null 2>&1 || { echo >&2 "ipinfo require curl to display public ip geolocalization."; geo=0; }
+type jq >/dev/null 2>&1 || { echo >&2 "ipinfo require jq to display public ip geolocalization."; geo=0; }
 # checking if nmcli is avaiable
 wifi=1
 type nmcli >/dev/null 2>&1 || { echo >&2 "ipinfo require nmcli to display wifi information."; wifi=0;}
@@ -61,7 +75,7 @@ echo "DNS Server  :  $dnsserver"
 if [ $wifi -eq 1 ]
 then
     echo "-----------------------------------------"
-    echo "         Wifi information"
+    echo "           Wifi information"
     echo "-----------------------------------------"
     echo "SSID     : $ssid"
     echo "TYPE     : $type"
@@ -71,7 +85,7 @@ then
     echo "RATE     : $rate"
     echo "SIGNAL   : $signal"
 fi
-if [ $geo -eq 0 ]
+if [ $geo -eq 1 ]
 then
     # get IP public info
     ippublic=$(curl -s ipinfo.io/ip)
@@ -82,7 +96,7 @@ then
     zipcod=$(echo $json_result |  jq -r '.postal')
     timezone=$(echo $json_result |  jq -r '.timezone')
     echo "-----------------------------------------"
-    echo "     Public IP Geolocalization"
+    echo "        Public IP Geolocalization"
     echo "-----------------------------------------"
     echo "Public IP   :  $ippublic"
     echo "City        :  $city"
