@@ -29,7 +29,7 @@ geo=1
 type curl >/dev/null 2>&1 || { echo -e >&2 " \e[93m ipinfo require curl to display public ip geolocalization."; geo=0; }
 type jq >/dev/null 2>&1 || { echo -e >&2 "\e[93m ipinfo require jq to display public ip geolocalization."; geo=0; }
 # checking if nmcli is avaiable
-type nmcli >/dev/null 2>&1 || { echo -e >&2 "i\e[93m pinfo require nmcli to display wifi information."; wifi=0;}
+type nmcli >/dev/null 2>&1 || { echo -e >&2 "i\e[93m ipinfo require nmcli to display wifi information."; wifi=0;}
 if [[ $(nmcli -t  -f name  connection show --active) == '' ]] 
 then
     wifi=0
@@ -56,8 +56,6 @@ iplocal=$(ip -4 a show $interface | grep inet | head -1 | cut -d' ' -f6)
 broadcast=$(ip -4 a show $interface | grep inet | head -1 | cut -d' ' -f8)
 gateway=$(ip -4 r | grep default | head -1 |cut -d' ' -f3)
 dnsserver=$(grep "nameserver" /etc/resolv.conf | head -1 | cut -d' ' -f2)
-#dnsserver=$(dig localhost | grep SERVER | cut -d' ' -f3 | cut -d'#' -f1)
-
 # display infos
 echo -e "\e[39m------------------------------------------"
 echo "            Active Interface"
